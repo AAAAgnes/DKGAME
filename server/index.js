@@ -3,12 +3,22 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 
 const app = express();
+
+app.use(express.static(path.join(__dirname, '..', 'client')));
+
+
 const server = http.createServer(app);
 
+app.get('/', (req, res) => {
+    // client 폴더 안에 있는 index.html 파일을 전송하도록 설정
+    res.sendFile(path.join(__dirname, '..', 'client', 'index.html'));
+});
+
 // 🚨 게임 설정 값
-const GAME_PASSWORD = "1"; // 친구 전용 공통 비밀번호
+const GAME_PASSWORD = "dksex"; // 친구 전용 공통 비밀번호
 const MAX_PLAYERS = 4;       // 최대 플레이어 수
 const HAND_SIZE = 5;         // 시작 손패 수
 
