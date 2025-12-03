@@ -389,7 +389,7 @@ socket.on('newChatMessage', (message) => {
     const senderClass = message.isPlayer ? 'player-nickname' : 'spectator-nickname';
     
     messageElement.innerHTML = `
-        <span class="${senderClass}">[${message.sender}]</span>: 
+        <span class="${senderClass}">${message.sender}</span>: 
         <span class="message-text">${message.text}</span>
     `;
     
