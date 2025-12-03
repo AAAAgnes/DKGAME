@@ -1,6 +1,7 @@
 // client/script.js (최종 버전: 라운드 종료 후 BL의 신 확인 버튼 기능 추가)
 
-const socket = io('http://localhost:3001'); 
+const RENDER_SERVER_URL = 'https://dkgame.onrender.com/'; 
+const socket = io(RENDER_SERVER_URL);
 
 // 1. DOM 요소 가져오기
 const lobbyContainer = document.getElementById('lobby-container');
