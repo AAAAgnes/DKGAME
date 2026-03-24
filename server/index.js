@@ -131,7 +131,7 @@ const io = new Server(server, {
 let gameState = {
     isGameStarted: false,
     round: 0,
-    message: "로비: 사원들을 기다리는 중...",
+    message: "로비: 중생들을 기다리는 중...",
     currentPlayer: null,       // 현재 턴 플레이어의 socketId
     blGodId: null,             // 이번 라운드의 BL의 신의 socketId
     playerCount: 0,            // 플레이어 수 (관전자 제외)
@@ -178,7 +178,7 @@ function initializeGame() {
     // 4. 첫 BL의 신 선정 및 턴 시작
     startNewRound(true); 
     
-    console.log(`게임 시작! 사원 수: ${gameState.playerOrder.length}`);
+    console.log(`운명의 수레바퀴가 돌아갑니다... 중생 수: ${gameState.playerOrder.length}`);
 }
 
 function startNewRound(isInitial = false) {
@@ -203,7 +203,7 @@ function startNewRound(isInitial = false) {
     // 🚨 [추가] 라운드 종료 상태 초기화
     gameState.isRoundOver = false; 
 
-    gameState.message = `[${gameState.players[gameState.blGodId].nickname}] 부장이 담당자! 대영/리쿠를 정해 안건을 제출해주세요.`;
+    gameState.message = `[${gameState.players[gameState.blGodId].nickname}] 보살의 차례 대영/리쿠를 정해 운명을 선택해주세요.`;
     gameState.round++;
 }
 
@@ -229,7 +229,7 @@ io.on('connection', (socket) => {
             };
             
             socket.emit('joined', { role: 'player' });
-            console.log(`사원 접속: ${nickname} (현재 ${gameState.playerCount + 1}/${MAX_PLAYERS}명)`);
+            console.log(`보살 접속: ${nickname} (현재 ${gameState.playerCount + 1}/${MAX_PLAYERS}명)`);
             gameState.playerCount++;
 
         } else {
@@ -237,7 +237,7 @@ io.on('connection', (socket) => {
             gameState.spectators[socket.id] = { nickname: nickname, socketId: socket.id };
             
             socket.emit('joined', { role: 'spectator' });
-            console.log(`관전자 접속: ${nickname}`);
+            console.log(`중생 접속: ${nickname}`);
         }
         
         emitGameState();
@@ -249,9 +249,9 @@ io.on('connection', (socket) => {
             initializeGame();
             emitGameState();
         } else if (gameState.isGameStarted) {
-             socket.emit('alert', '이미 회의가 시작되었습니다.');
+             socket.emit('alert', '이미 운명의 수레바퀴가 돌아가고 있습니다.');
         } else {
-             socket.emit('alert', '최소 2명 이상의 사원이 필요합니다.');
+             socket.emit('alert', '최소 2명 이상의 보살이 필요합니다.');
         }
     });
 
@@ -264,7 +264,7 @@ io.on('connection', (socket) => {
 
         // 1. 기본 체크 (사용자 접속 여부)
         if (!user) {
-             socket.emit('alert', "접속 상태를 확인해주세요.");
+             socket.emit('alert', "어? 이승과의 연결이...");
              return;
         }
 
@@ -280,13 +280,13 @@ io.on('connection', (socket) => {
             
             // 투표 처리 로직 (비순차적 투표 허용) - 관전자/플레이어 모두 허용
             if (gameState.votes[playerId]) {
-                socket.emit('alert', "이미 투표했습니다.");
+                socket.emit('alert', "이미 운명을 결정지었습니다.");
                 emitGameState();
                 return;
             }
             
             if (!cardId) {
-                socket.emit('alert', "투표할 카드를 선택해야 합니다.");
+                socket.emit('alert', "운명을 회피 할 수 없습니다. 선택해야 합니다.");
                 emitGameState();
                 return;
             }
@@ -294,7 +294,7 @@ io.on('connection', (socket) => {
             const votedCardIndex = gameState.responseCards.findIndex(c => c.id === cardId);
             
             if (votedCardIndex === -1) {
-                socket.emit('alert', "테이블 위의 카드에만 투표할 수 있습니다.");
+                socket.emit('alert', "테이블 위의 운명에만 투표할 수 있습니다.");
                 emitGameState();
                 return;
             }
@@ -302,7 +302,7 @@ io.on('connection', (socket) => {
             // 투표 저장 (카드 ID)
             gameState.votes[playerId] = cardId;
             const nickname = player ? player.nickname : gameState.spectators[playerId].nickname;
-            gameState.message = `[${nickname}] 님이 투표를 완료했습니다. (${Object.keys(gameState.votes).length}명 투표 완료)`;
+            gameState.message = `[${nickname}] 님이 운명을 마주했습니다. (${Object.keys(gameState.votes).length}명 투표 완료)`;
             
             gameState.currentPlayer = gameState.blGodId; 
             
@@ -314,13 +314,13 @@ io.on('connection', (socket) => {
         
         // 2. 투표 단계 외 카드를 내는 행동은 플레이어만 가능 (관전자 차단)
         if (!player) {
-             socket.emit('alert', "게임 조작은 부장님들만 할 수 있습니다.");
+             socket.emit('alert', "운명의 조작은 보살님들에게만 허용됩니다.");
              return;
         }
 
         // 3. 턴 체크 (카드 제출 단계) 
         if (gameState.currentPlayer !== playerId && gameState.responseCards.length < gameState.playerCount - 1) {
-            socket.emit('alert', "님 차례 아니라고요.");
+            socket.emit('alert', "차례를 기다리시지요...");
             return;
         }
         
@@ -337,7 +337,7 @@ io.on('connection', (socket) => {
              playedCard = player.hand.splice(cardIndex, 1)[0]; // 손패에서 제거
         } else if (playerId !== gameState.blGodId && gameState.tableCards.length > 0 && gameState.responseCards.length < gameState.playerCount - 1) {
              // 카드를 내는 플레이어인데 손패에 없는 카드를 냈다면 오류
-             socket.emit('alert', "가지고 있는 카드를 고르셔야죠.");
+             socket.emit('alert', "가지고 있는 운명를 고르셔야죠.");
              return;
         }
         
@@ -346,7 +346,7 @@ io.on('connection', (socket) => {
         if (playerId === gameState.blGodId && gameState.tableCards.length === 0) {
             
             if (!position || (position !== 'Gong' && position !== 'Su')) {
-                socket.emit('alert', "담당자는 대영이로 할지 리쿠로 할지 선택해야하셔요.");
+                socket.emit('alert', "보살님은 대영이로 할지 리쿠로 할지 선택해야하셔요.");
                 if(playedCard) player.hand.push(playedCard); // 카드 사용 취소
                 emitGameState();
                 return;
@@ -392,7 +392,7 @@ io.on('connection', (socket) => {
             };
             
             gameState.responseCards.push(responseCard); 
-            gameState.message = `[${player.nickname}] 부장도 결정완료 (${gameState.responseCards.length}/${gameState.playerCount - 1})`;
+            gameState.message = `[${player.nickname}] 보살도 결정완료 (${gameState.responseCards.length}/${gameState.playerCount - 1})`;
             
             // 덱에서 카드 보충 (응답자)
             if (gameState.deck.length > 0) {
@@ -416,7 +416,7 @@ io.on('connection', (socket) => {
             // 🚨 6. 라운드 종료 체크 및 투표 단계 진입
             if (gameState.responseCards.length === gameState.playerCount - 1) {
                 gameState.currentPlayer = gameState.blGodId; 
-                gameState.message = `모든 의견 제출 완료! ${gameState.players[gameState.blGodId].nickname} 담당자의 선택을 기다리며, 모두 함께 투표타임.`;
+                gameState.message = `모든 운명 제출 완료! ${gameState.players[gameState.blGodId].nickname} 살(煞)을 피하고 싶거든 투표하라. 보살의 눈이 번뜩이는 지금, 그대의 선택이 운명을 결정하리라..`;
             }
             playedCard = null; 
 
@@ -456,17 +456,17 @@ io.on('connection', (socket) => {
 
             if (popWinnerId && maxVotes > 0) {
                 gameState.players[popWinnerId].popScore += 1;
-                popScoreMessage = `(사원들의선택: [${gameState.players[popWinnerId].nickname}] 1점 획득, ${maxVotes}표)`;
+                popScoreMessage = `(중생들의선택: [${gameState.players[popWinnerId].nickname}] 1점 획득, ${maxVotes}표)`;
             } else if (maxVotes > 0 && popWinnerId === null) {
-                popScoreMessage = `(사원들의선택: 동점!! 아쉽다)`;
+                popScoreMessage = `(중생들의선택: 동점!! 아쉽다)`;
             } else {
-                popScoreMessage = `(사원들의선택: 다들 어디가셨나요)`;
+                popScoreMessage = `(중생들의선택: 다들 어디가셨나요)`;
             }
 
             gameState.message = `
-                [담당자 선택] : ${chosenCard.ownerNickname} 이 인사고과 1점을 획득했습니다!
+                [담당보살 선택] : ${chosenCard.ownerNickname} 이 인연점수 1점을 획득했습니다!
                 ${popScoreMessage}
-                **담당자는 [다음 안건 시작] 버튼을 눌러주세요!**
+                **담당자는 [다음 운명 시작] 버튼을 눌러주세요!**
             `;
             
             gameState.currentPlayer = playerId; 

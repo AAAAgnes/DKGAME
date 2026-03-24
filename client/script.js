@@ -53,15 +53,15 @@ socket.on('joined', ({ role }) => {
     lobbyContainer.style.display = 'none'; // 로비 숨기기
     gameContainer.style.display = 'block';  // 게임 화면 표시
 
-    statusEl.textContent = `✅ 접속 성공. 당신의 역할: ${role === 'player' ? '담당자' : '사원'}`;
+    statusEl.textContent = `✅ 접속 성공. 당신의 역할: ${role === 'player' ? '보살' : '중생'}`;
 
     if (role === 'spectator') {
-        myHandTitleEl.textContent = '당신은 사원입니다. (안건 없음)';
+        myHandTitleEl.textContent = '당신은 중생입니다.';
         handContainerEl.innerHTML = '';
     } else {
         // 플레이어에게만 임시 시작 버튼 추가 (테스트용)
         const startBtn = document.createElement('button');
-        startBtn.textContent = '회의 시작';
+        startBtn.textContent = '천기누설 시작';
         startBtn.onclick = () => socket.emit('startGame');
         statusEl.appendChild(startBtn);
     }
@@ -75,11 +75,11 @@ function renderHand(hand, blGodId) {
     // 🚨 [핵심 수정] BL의 신이 라운드 종료를 확인해야 하는 상태
     if (mySocketId === blGodId && gameState.isRoundOver) {
         // 모든 손패 카드를 감추고 다음 라운드 시작 버튼만 표시
-        handContainerEl.textContent = '담당자: 회의 결과를 확인하고 다음 안건으로 ㄱㄱ.';
+        handContainerEl.textContent = '보살: 천기누설 결과를 확인하고 다음 운명으로...';
         
         // 버튼 텍스트 변경을 위한 임시 버튼 생성
         const nextRoundBtn = document.createElement('button');
-        nextRoundBtn.textContent = '다음 안건 시작';
+        nextRoundBtn.textContent = '다음 운명 시작';
         nextRoundBtn.style.padding = '10px 20px';
         nextRoundBtn.style.fontSize = '1.2em';
         nextRoundBtn.style.cursor = 'pointer';
@@ -95,7 +95,7 @@ function renderHand(hand, blGodId) {
     // ------------------------------------------
 
     if (!hand || hand.length === 0) {
-        handContainerEl.textContent = '사업아이템이 비어 있습니다.';
+        handContainerEl.textContent = '가지고 있는 운명이 없네요.';
         return;
     }
     
@@ -142,19 +142,19 @@ function renderHand(hand, blGodId) {
             if (myPlayerIsGod) {
                 
                 if (gameState.tableCards.length > 0 && gameState.responseCards.length < gameState.playerCount - 1) {
-                    socket.emit('alert', "회의를 기다리세요.");
+                    socket.emit('alert', "아직 천기누설이 끝나지 않았습니다.");
                     return;
                 }
                 
                 if (gameState.responseCards.length >= gameState.playerCount - 1) {
                     // 투표가 완료되어 선택할 차례인 경우, 손패 카드를 클릭해도 무시
-                    socket.emit('alert', "테이블에 있는 것중에 고르시라고요.");
+                    socket.emit('alert', "가지고 있는 것중에 고르시라고요.");
                     return;
                 }
 
                 // 공/수 선택 UI 표시
                 blGodActionsEl.style.display = 'block';
-                cardToPlayNameEl.textContent = `선택된 직업: ${card.name}`;
+                cardToPlayNameEl.textContent = `선택된 운명: ${card.name}`;
                 
                 // --- 🌟 핵심 수정: 새로운 버튼에 클릭 리스너 연결 ---
                 finalPlayAsGongBtn.onclick = () => {
@@ -173,7 +173,7 @@ function renderHand(hand, blGodId) {
             } else {
                 // --- 🚨 응답자일 때의 처리 ---
                 if (gameState.tableCards.length === 0) {
-                    socket.emit('alert', "담당자의 결정을 기다리세요...");
+                    socket.emit('alert', "보살님의 결정을 기다리세요...");
                     return;
                 }
                 
@@ -211,7 +211,7 @@ function renderTable(tableCards, responseCards) {
     allCards.forEach(card => {
         const cardEl = document.createElement('div');
         
-        let cardType = '아이템';
+        let cardType = '운명';
         let borderColor = '#87ceeb';
         let bgColor = '#f0f8ff';
         let footerText = `제출자: ${card.ownerNickname}`; 
@@ -269,7 +269,7 @@ function renderTable(tableCards, responseCards) {
         if (gameState.isRoundOver && gameState.responseCards.some(rc => rc.id === card.id && gameState.players[rc.ownerId].blScore > (gameState.round > 1 ? gameState.players[rc.ownerId].blScore - 1 : 0))) {
              cardEl.style.borderColor = '#008000'; // 녹색 테두리
              cardEl.style.boxShadow = '0 0 15px #008000';
-             footerText += ' 🏆 담당자 선택!';
+             footerText += ' 🏆 담당보살 선택!';
         }
 
         cardEl.innerHTML = `
@@ -311,7 +311,7 @@ function renderPlayerList(players, spectators) {
         const totalScore = blScore + popScore;
         
         // 관전자 코드가 제거되었으므로, 이제 p는 항상 플레이어입니다.
-        statusText = `(총점: ${totalScore}, 인사고과: ${blScore}, 인기도: ${popScore}) ${isBlGod ? '담당자' : ''} ${isCurrentPlayer ? '🟢 차례' : ''}`;
+        statusText = `(총점: ${totalScore}, 운명점수: ${blScore}, 인기도: ${popScore}) ${isBlGod ? '담당보살' : ''} ${isCurrentPlayer ? '🟢 차례' : ''}`;
         
         li.textContent = `${p.nickname} ${statusText} ${p.socketId === mySocketId ? '👈 나' : ''}`;
         playerListUl.appendChild(li);
