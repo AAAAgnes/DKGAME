@@ -265,17 +265,29 @@ function renderTable(tableCards, responseCards) {
              cardEl.style.cursor = 'default';
         }
         
-        // 🚨 [추가] 라운드 결과 발표 시 (isRoundOver = true) BL의 신이 선택한 카드 강조
-        if (gameState.isRoundOver && gameState.responseCards.some(rc => rc.id === card.id && gameState.players[rc.ownerId].blScore > (gameState.round > 1 ? gameState.players[rc.ownerId].blScore - 1 : 0))) {
-             cardEl.style.borderColor = '#008000'; // 녹색 테두리
-             cardEl.style.boxShadow = '0 0 15px #008000';
-             footerText += ' 🏆 담당보살 선택!';
-        }
+//         // 🚨 [추가] 라운드 결과 발표 시 (isRoundOver = true) BL의 신이 선택한 카드 강조
+//         if (gameState.isRoundOver && gameState.responseCards.some(rc => rc.id === card.id && gameState.players[rc.ownerId].blScore > (gameState.round > 1 ? gameState.players[rc.ownerId].blScore - 1 : 0))) {
+//              cardEl.style.borderColor = '#008000'; // 녹색 테두리
+//              cardEl.style.boxShadow = '0 0 15px #008000';
+//              footerText += ' 🏆 담당보살 선택!';
+//         }
+
+if (gameState.isRoundOver && gameState.responseCards.some(rc => rc.id === card.id && gameState.players[rc.ownerId].blScore > (gameState.round > 1 ? gameState.players[rc.ownerId].blScore - 1 : 0))) {
+    
+    // 1. 직접 스타일 지정 대신 CSS 클래스 추가 (무지개 네온 효과)
+    cardEl.classList.add('card-chosen-by-bosal');
+    
+    // 2. 푸터 텍스트도 더 사짜스럽게 변경
+    footerText += ' 🏆 천기누설 당첨! 🏆';
+} else {
+    // 3. [중요] 선택되지 않은 카드는 클래스를 확실히 제거 (이전 라운드 잔재 삭제)
+    cardEl.classList.remove('card-chosen-by-bosal');
+}
 
         cardEl.innerHTML = `
             <div class="card-type">${cardType}</div>
             <div class="card-name">${card.name}</div>
-            <div style="font-size: 10px; color: #666; margin-top: 5px;">${footerText}</div>
+            <div style="font-size: 11px; color: #000000; margin-top: 5px;">${footerText}</div>
         `;
 
         tableContainerEl.appendChild(cardEl);
@@ -379,24 +391,28 @@ function sendChatMessage(text) {
 
 // [클라이언트 측 JavaScript]
 socket.on('newChatMessage', (message) => {
-    const chatContainer = document.getElementById('chat-messages');
-    
-    // 닉네임, 시간, 텍스트를 포함하는 HTML 요소 생성
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('chat-message');
-    
-    // 플레이어/관전자에 따라 닉네임 색상 다르게 표시
-    const senderClass = message.isPlayer ? 'player-nickname' : 'spectator-nickname';
-    
-    messageElement.innerHTML = `
-        <span class="${senderClass}">${message.sender}</span>: 
-        <span class="message-text">${message.text}</span>
-    `;
-    
-    chatContainer.appendChild(messageElement);
-    
-    // 스크롤을 항상 최하단으로 이동
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    const chatContainer = document.getElementById('chat-messages');
+    
+    // 1. 메시지 추가 전, 사용자가 바닥에 붙어있는지 확인 (여유값 50px 정도 둠)
+    // scrollHeight(전체 높이) - scrollTop(내려온 위치) <= clientHeight(보이는 높이) + 여유값
+    const isAtBottom = (chatContainer.scrollHeight - chatContainer.scrollTop) <= (chatContainer.clientHeight + 50);
+
+    // 2. 메시지 요소 생성
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('chat-message');
+    const senderClass = message.isPlayer ? 'player-nickname' : 'spectator-nickname';
+    
+    messageElement.innerHTML = `
+        <span class="${senderClass}">${message.sender}</span>: 
+        <span class="message-text">${message.text}</span>
+    `;
+    
+    chatContainer.appendChild(messageElement);
+    
+    // 3. 사용자가 바닥 근처에 있었을 때만 스크롤을 최하단으로 이동
+    if (isAtBottom) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
 });
 // --- 채팅 DOM 요소 및 이벤트 리스너 추가 ---
 
